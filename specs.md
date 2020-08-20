@@ -35,3 +35,19 @@ Specs:
 - ability to be called in telegram chat
 - ability to store context (without DB)
 - ability to schedule calls
+
+
+System
+
+Storage
+
+ID
+CreateAt
+Status
+Description
+
+User
+
+Username
+ID
+Tasks []Storage
