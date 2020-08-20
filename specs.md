@@ -45,9 +45,25 @@ ID
 CreateAt
 Status
 Description
+Due default time.Now() + add(24hrs)
+
+Methods
+
+- NewTask() error
+- GetByID() Storage, error
+- UpdateByID(Storage) error
+- Delete(ID) error
 
 User
 
 Username
 ID
 Tasks []Storage
+
+Methods
+
+- GetUser(telegram_username) User, error
+- GetTasks(telegram_username) []Storage, error
+- GetTaskByID(telegram_username, id) Storage, error
+- UpdateTask(telegram_username, id) error
+- DeleteTask(telegram_username, id) error
