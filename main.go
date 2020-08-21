@@ -1,26 +1,33 @@
 package main
 
 import (
-	"fmt"
+	"log"
+	"time"
 
-	"github.com/brianium/mnemonic"
+	tb "gopkg.in/tucnak/telebot.v2"
 )
+
+var user = &User{}
+var storage = &Storage{}
 
 func main() {
 
-    // generate a random Mnemonic in English with 256 bits of entropy
-    m, _ := mnemonic.NewRandom(256, mnemonic.English)
+	b, err := tb.NewBot(tb.Settings{
+		// You can also set custom API URL.
+		// If field is empty it equals to "https://api.telegram.org".
 
-    // print the Mnemonic as a sentence
-    fmt.Println(m.Sentence())
+		Token:  "1165371757:AAGy9FFFhOcSYhoB1uPU6JBY_7w4d1_xHvg",
+		Poller: &tb.LongPoller{Timeout: 10 * time.Second},
+	})
 
-    // inspect underlying words
-    fmt.Println(m.Words)
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
 
-    // generate a seed from the Mnemonic
-    seed := m.GenerateSeed("passphrase")
+	b.Handle("/remindme", func(m *tb.Message) {
+		b.Send(m.Sender, m.Payload)
+	})
 
-    // print the seed as a hex encoded string
-    fmt.Println(seed)
-
+	b.Start()
 }

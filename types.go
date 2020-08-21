@@ -2,7 +2,15 @@ package main
 
 import (
 	"errors"
+	"strings"
 	"time"
+)
+
+const (
+	notFinished = iota + 1
+	isPending
+	delayed
+	done
 )
 
 /*
@@ -39,64 +47,79 @@ Methods
 
 //Storage building block for a task
 type Storage struct {
-	ID int
-	CreateAt time.Time
-	Status bool
+	ID          int
+	CreateAt    time.Time
+	Status      int
 	Description string
-	Due  time.Time // default time.Now() + add(24hrs)
+	Due         time.Time // default time.Now() + add(24hrs)
+	IsDone      bool
 }
 
-func (s *Storage)isValid()bool{
-	if s.Description != "" {
-		return true
-	}
-	return false
+//Message contains telegram content
+type Message struct {
+	message string
 }
 
+func (m *Message) tokenize(token string) []string {
+	var data []string
+	//remindme to drink water at two hours from now
+	s := strings.SplitAfter(m.message, " at")
+	ss := strings.Join(s[:1], "")
+	data = append(data, ss)
+	res := strings.SplitAfter(ss, "to ")
+	ss = strings.Join(res[:1], "")
+	data = append(data, ss)
+	return res
 
+}
+
+func (s *Storage) isValid() bool {
+	return s.Description == ""
+}
+
+//User contains storage for all users data
 type User struct {
 	Username string
-	ID int
-	Tasks []Storage
-	Users []User
+	ID       int
+	Tasks    []Storage
+	Users    []User
 }
 
-func (u *User)checkTask(t Storage) (bool){
+func (u *User) checkTask(t Storage) bool {
 	return true
 }
 
-func (u *User)append(t Storage) (bool){
-	if u.checkTask(t){
+func (u *User) append(t Storage) bool {
+	if u.checkTask(t) {
 		u.Tasks = append(u.Tasks, t)
 		return true
 	}
 	return false
 }
 
-func (u *User)getUser(user string) (*User, error){
-	for _, v := range u.Users{
+func (u *User) getUser(user string) (*User, error) {
+	for _, v := range u.Users {
 		if user == v.Username {
 			return &v, nil
 		}
 	}
-	return &User{}, userNotFound
+	return &User{}, errNotFound
 }
 
-
-func (u *User)GetUser(username string) (error){
+func (u *User) GetUser(username string) error {
 	res, err := u.getUser(username)
 	u = res
 	return err
 }
 
-func (u *User)GetTasks(username string) ([]Storage, error){
+func (u *User) GetTasks(username string) ([]Storage, error) {
 
 	res, err := u.getUser(username)
 	return res.Tasks, err
 
 }
 
-func (u *User)GetTaskByID(username string, id int) (Storage, error){
+func (u *User) GetTaskByID(username string, id int) (Storage, error) {
 	res, err := u.getUser(username)
 	if err != nil {
 		return Storage{}, err
@@ -107,51 +130,55 @@ func (u *User)GetTaskByID(username string, id int) (Storage, error){
 			return v, nil
 		}
 	}
-	return Storage{}, genericError
+	return Storage{}, errGeneric
 }
 
-
-func (u *User)NewTask(username string, s Storage) error{
-	if s.isValid(){
+func (u *User) NewTask(username string, s Storage) error {
+	if s.isValid() {
 		u.Tasks = append(u.Tasks, s)
 		return nil
-	}else{
-		return genericError
+	} else {
+		return errGeneric
 	}
 }
 
-func (u *User)UpdateTask(username string, id int, t Storage) (*Storage, error) {
+func (u *User) UpdateTask(username string, id int, t Storage) (*Storage, error) {
 	u1, err := u.getUser(username)
 	if err != nil {
 		return nil, err
 	}
 	for _, v := range u1.Tasks {
 		if v.ID == id {
+			if t.Due.IsZero() {
+				t.Due = v.Due
+			}
+			if t.Description == "" {
+				t.Description = v.Description
+			}
+			// fix is done
 			v = t
 		}
 	}
-	return nil, userNotFound
+	return nil, errNotFound
 
 }
 
-
-func (u *User)DeleteTask(username string, id int) error{
+func (u *User) DeleteTask(username string, id int) error {
 	u1, err := u.getUser(username)
 	if err != nil {
 		return err
 	}
 	for k, v := range u1.Tasks {
 		if v.ID == id {
-			u1.Tasks =  append(u1.Tasks[:k], u1.Tasks[k+1:]...)
+			u1.Tasks = append(u1.Tasks[:k], u1.Tasks[k+1:]...)
 			return nil
 		}
 	}
-	return  userNotFound
+	return errNotFound
 
 }
 
-
 var (
-	userNotFound = errors.New("user not found")
-	genericError = errors.New("there is an error")
+	errNotFound = errors.New("user not found")
+	errGeneric  = errors.New("there is an error")
 )
