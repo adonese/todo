@@ -1,8 +1,11 @@
 package main
 
 import (
+	"bytes"
+	"encoding/gob"
 	"errors"
-	"strings"
+	"io/ioutil"
+	"os"
 	"time"
 )
 
@@ -60,19 +63,6 @@ type Message struct {
 	message string
 }
 
-func (m *Message) tokenize(token string) []string {
-	var data []string
-	//remindme to drink water at two hours from now
-	s := strings.SplitAfter(m.message, " at")
-	ss := strings.Join(s[:1], "")
-	data = append(data, ss)
-	res := strings.SplitAfter(ss, "to ")
-	ss = strings.Join(res[:1], "")
-	data = append(data, ss)
-	return res
-
-}
-
 func (s *Storage) isValid() bool {
 	return s.Description == ""
 }
@@ -116,6 +106,13 @@ func (u *User) GetTasks(username string) ([]Storage, error) {
 
 	res, err := u.getUser(username)
 	return res.Tasks, err
+
+}
+
+func (u *User) GetTasksString(username string) ([]string, error) {
+
+	_, err := u.getUser(username)
+	return []string{}, err
 
 }
 
@@ -175,6 +172,40 @@ func (u *User) DeleteTask(username string, id int) error {
 		}
 	}
 	return errNotFound
+
+}
+
+// This example transmits a value that implements the custom encoding and decoding methods.
+func encodeDecode() error {
+	var network bytes.Buffer // Stand-in for the network.
+
+	// Create an encoder and send a value.
+	enc := gob.NewEncoder(&network)
+	err := enc.Encode(Storage{Description: "my work"})
+	if err != nil {
+		return err
+	}
+	err = ioutil.WriteFile("data.dump", network.Bytes(), 0644)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func readFile() (Storage, error) {
+	// Create a decoder and receive a value.
+	net, err := os.Open("data.dump")
+	if err != nil {
+		return Storage{}, err
+	}
+
+	dec := gob.NewDecoder(net)
+	var v Storage
+	err = dec.Decode(&v)
+	if err != nil {
+		return Storage{}, err
+	}
+	return v, nil
 
 }
 

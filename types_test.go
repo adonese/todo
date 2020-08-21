@@ -1,28 +1,43 @@
 package main
 
-import "testing"
+import (
+	"reflect"
+	"testing"
+)
 
-func TestMessage_tokenize(t *testing.T) {
-	type fields struct {
-		message string
-	}
+func Test_encodeDecode(t *testing.T) {
 	tests := []struct {
-		name   string
-		fields fields
-		sep    string
-		want   string
+		name    string
+		wantErr bool
 	}{
-		{"to_test", fields{message: "remindme to drink water at two hours from now"}, "to", "drink water at two hours from now"},
-		{"at_test", fields{message: "remindme to drink water at two hours from now"}, "at", "drink water at two hours from now"},
-		{"np_test", fields{message: "remindme to drink water at two hours from now"}, "noop", "drink water at two hours from now"},
+		{"testing", true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			m := &Message{
-				message: tt.fields.message,
+			if err := encodeDecode(); (err != nil) != tt.wantErr {
+				t.Errorf("encodeDecode() error = %v, wantErr %v", err, tt.wantErr)
 			}
-			if got := m.tokenize(" to"); got[0] != tt.want {
-				t.Errorf("Message.tokenize() = %v, want %v", got, tt.want)
+		})
+	}
+}
+
+func Test_readFile(t *testing.T) {
+	tests := []struct {
+		name    string
+		want    Storage
+		wantErr bool
+	}{
+		{"successful test", Storage{Description: "my work"}, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := readFile()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("readFile() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("readFile() = %v, want %v", got, tt.want)
 			}
 		})
 	}

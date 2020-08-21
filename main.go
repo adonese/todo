@@ -26,7 +26,21 @@ func main() {
 	}
 
 	b.Handle("/remindme", func(m *tb.Message) {
-		b.Send(m.Sender, m.Payload)
+		des := capture(m.Payload)
+		if des == "" {
+			d, _ := user.GetTasks(m.Sender.Username)
+			b.Send(m.Sender, d)
+		} else {
+			// t := captureAt(m.Payload)
+			s := Storage{Description: des}
+			user.NewTask(m.Sender.Username, s)
+			b.Send(m.Sender, "task was added")
+		}
+
+	})
+
+	b.Handle("/tasks", func(m *tb.Message) {
+
 	})
 
 	b.Start()
