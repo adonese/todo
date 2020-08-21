@@ -16,7 +16,7 @@ func main() {
 		// You can also set custom API URL.
 		// If field is empty it equals to "https://api.telegram.org".
 
-		Token:  "1165371757:AAGy9FFFhOcSYhoB1uPU6JBY_7w4d1_xHvg",
+		Token:  "your-token",
 		Poller: &tb.LongPoller{Timeout: 10 * time.Second},
 	})
 
